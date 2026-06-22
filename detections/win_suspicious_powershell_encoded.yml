@@ -1,0 +1,44 @@
+id: 6f2a1c4e-9b3d-4f8a-bd21-3c7e0a5f1d92
+title: Encoded PowerShell Command Execution
+status: production
+description: >
+  Detects PowerShell invoked with an encoded command payload (-EncodedCommand /
+  -enc / -e) and associated obfuscation flags. Encoded commands are a common way
+  to hide malicious one-liners from casual log review and EDR string matching.
+author: Atlas
+created: 2026-06-20
+modified: 2026-06-20
+severity: high
+mitre:
+  - T1059.001   # PowerShell
+  - T1027       # Obfuscated Files or Information
+data_sources:
+  - sourcetype: WinEventLog:Microsoft-Windows-Sysmon/Operational  # EventCode 1
+  - sourcetype: WinEventLog:Security                              # EventCode 4688
+spl: |
+  index=endpoint (sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1)
+  OR (sourcetype="WinEventLog:Security" EventCode=4688)
+  (Image="*\\powershell.exe" OR Image="*\\pwsh.exe" OR New_Process_Name="*\\powershell.exe")
+  | eval cmd=coalesce(CommandLine, Process_Command_Line)
+  | where match(cmd, "(?i)\s-e(nc(odedcommand)?)?\s")
+  | eval susp_flags=if(match(cmd,"(?i)-nop|-w\s?hidden|-noni|bypass|frombase64string"),1,0)
+  | search susp_flags=1
+  | stats count min(_time) as first_seen max(_time) as last_seen
+      values(cmd) as command_lines by host, User
+  | convert ctime(first_seen) ctime(last_seen)
+schedule:
+  cron: "*/10 * * * *"
+  earliest: -15m
+  latest: now
+throttle:
+  window: 1h
+  fields:
+    - host
+    - User
+false_positives:
+  - Legitimate admin automation / SCCM packages using encoded commands.
+  - Some EDR and backup agents wrap PowerShell in base64.
+response: runbooks/encoded_powershell.md
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+tests: tests/win_suspicious_powershell_encoded.json

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "encoded_command_with_bypass_fires",
+    "events": [
+      {"Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+       "CommandLine": "powershell.exe -nop -w hidden -enc SQBFAFgAKAA..."}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "plain_powershell_does_not_fire",
+    "events": [
+      {"Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+       "CommandLine": "powershell.exe Get-Service | Sort-Object Status"}
+    ],
+    "expected_alerts": 0
+  },
+  {
+    "name": "encoded_without_susp_flags_does_not_fire",
+    "events": [
+      {"Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+       "CommandLine": "powershell.exe -EncodedCommand R2V0LURhdGU="}
+    ],
+    "expected_alerts": 0
+  }
+]
