@@ -1,0 +1,43 @@
+id: e7b4d2f9-1a83-4c67-b5e2-8d3f0a9c1b46
+title: Linux Reverse Shell Spawn via Common Interpreters
+status: production
+description: >
+  Detects shell interpreters spawning network-aware one-liners typical of reverse
+  shells (bash /dev/tcp, python socket, nc -e, etc.). Catches post-exploitation
+  callbacks from web shells and exploited services.
+author: Atlas
+created: 2026-06-20
+modified: 2026-06-20
+severity: critical
+mitre:
+  - T1059.004   # Unix Shell
+  - T1071.001   # Application Layer Protocol
+data_sources:
+  - sourcetype: linux:auditd
+  - sourcetype: linux:sysmon
+spl: |
+  index=endpoint (sourcetype="linux:auditd" OR sourcetype="linux:sysmon")
+  | eval cmd=coalesce(CommandLine, proctitle, exe)
+  | where match(cmd, "(?i)(/dev/tcp/|/dev/udp/)")
+      OR match(cmd, "(?i)nc(\.traditional)?\s+.*-e\s")
+      OR match(cmd, "(?i)python[0-9.]*\s+-c\s+.*socket")
+      OR match(cmd, "(?i)(bash|sh)\s+-i\s.*>&")
+  | stats count min(_time) as first_seen values(cmd) as commands
+      by host, parent_process_name, user
+  | convert ctime(first_seen)
+schedule:
+  cron: "*/5 * * * *"
+  earliest: -10m
+  latest: now
+throttle:
+  window: 30m
+  fields:
+    - host
+    - user
+false_positives:
+  - Security testing / red team exercises (correlate with change calendar).
+  - Some monitoring agents perform raw TCP health checks.
+response: runbooks/reverse_shell.md
+references:
+  - https://attack.mitre.org/techniques/T1059/004/
+tests: tests/linux_reverse_shell_spawn.json

