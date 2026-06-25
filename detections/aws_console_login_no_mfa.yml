@@ -1,0 +1,40 @@
+id: a1d9e7b2-4c6f-4a18-9e3b-2f8c1b6d4a07
+title: AWS Console Login Without MFA
+status: production
+description: >
+  Flags successful AWS Management Console logins where MFA was not used. Targets
+  IAM users (not federated SSO) authenticating with a password only, which is a
+  common precursor to credential-abuse and privilege-escalation activity.
+author: Atlas
+created: 2026-06-20
+modified: 2026-06-20
+severity: medium
+mitre:
+  - T1078.004   # Valid Accounts: Cloud Accounts
+  - T1556.006   # Modify Authentication Process: MFA
+data_sources:
+  - sourcetype: aws:cloudtrail
+spl: |
+  index=cloud sourcetype="aws:cloudtrail" eventName="ConsoleLogin"
+  | spath "responseElements.ConsoleLogin" output=login_result
+  | spath "additionalEventData.MFAUsed" output=mfa_used
+  | spath "userIdentity.type" output=identity_type
+  | search login_result="Success" mfa_used="No" identity_type="IAMUser"
+  | stats count min(_time) as first_seen by userIdentity.userName, sourceIPAddress, awsRegion
+  | convert ctime(first_seen)
+schedule:
+  cron: "*/15 * * * *"
+  earliest: -20m
+  latest: now
+throttle:
+  window: 6h
+  fields:
+    - userIdentity.userName
+    - sourceIPAddress
+false_positives:
+  - Break-glass IAM accounts intentionally exempt from MFA (should be allowlisted).
+  - Test accounts in non-prod accounts.
+response: runbooks/aws_login_no_mfa.md
+references:
+  - https://attack.mitre.org/techniques/T1078/004/
+tests: tests/aws_console_login_no_mfa.json

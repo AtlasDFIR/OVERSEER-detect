@@ -1,0 +1,30 @@
+[
+  {
+    "name": "iam_user_no_mfa_fires",
+    "events": [
+      {"login_result": "Success", "mfa_used": "No", "identity_type": "IAMUser"}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "mfa_used_does_not_fire",
+    "events": [
+      {"login_result": "Success", "mfa_used": "Yes", "identity_type": "IAMUser"}
+    ],
+    "expected_alerts": 0
+  },
+  {
+    "name": "federated_sso_user_does_not_fire",
+    "events": [
+      {"login_result": "Success", "mfa_used": "No", "identity_type": "AssumedRole"}
+    ],
+    "expected_alerts": 0
+  },
+  {
+    "name": "failed_login_does_not_fire",
+    "events": [
+      {"login_result": "Failure", "mfa_used": "No", "identity_type": "IAMUser"}
+    ],
+    "expected_alerts": 0
+  }
+]
