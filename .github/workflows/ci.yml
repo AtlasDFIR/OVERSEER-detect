@@ -1,0 +1,36 @@
+name: detections-ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Validate detection schema
+        run: python3 scripts/validate_detections.py
+
+      - name: Run detection logic tests
+        run: python3 scripts/test_detections.py
+
+      - name: Regenerate coverage report
+        run: python3 scripts/coverage_report.py
+
+      - name: Fail if coverage report is stale
+        run: |
+          if ! git diff --exit-code docs/COVERAGE.md; then
+            echo "::error::docs/COVERAGE.md is out of date. Run scripts/coverage_report.py and commit."
+            exit 1
+          fi
