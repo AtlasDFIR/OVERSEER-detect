@@ -1,0 +1,11 @@
+{
+  "_comment": "Maps each detection id to the number of alert rows its SPL should return against the indexed sample data. The integration runner submits each detection's real SPL to Splunk and asserts the row count matches.",
+  "6f2a1c4e-9b3d-4f8a-bd21-3c7e0a5f1d92": {"title": "Encoded PowerShell", "expected_rows": 1, "note": "WKS-001/alice encoded+hidden fires; plain and encoded-without-flags do not"},
+  "d4a7c2e9-6b18-4f53-8c92-1a3e7d5b0f64": {"title": "Scheduled Task Persistence", "expected_rows": 1, "note": "Updater task running powershell fires; Veeam backup task does not"},
+  "a1d9e7b2-4c6f-4a18-9e3b-2f8c1b6d4a07": {"title": "AWS Login No MFA", "expected_rows": 1, "note": "svc-deploy IAMUser no-MFA success; mfa=yes and failure excluded"},
+  "a9c4e1f7-3d85-4b62-9e07-6b2f8a1d4c30": {"title": "Okta MFA Fatigue", "expected_rows": 1, "note": "6 pushes in window then a success = PUSH_BOMB_THEN_SUCCESS"},
+  "b8f3a91c-2e74-4d56-9a1f-7c4e0b2d6f83": {"title": "Kerberoasting", "expected_rows": 1, "note": "svc_kerb requests 11 distinct SPNs with RC4; alice single AES request excluded"},
+  "c3e8f1a6-7d22-4b59-8a14-9f0b2e6c5d31": {"title": "Impossible Travel", "expected_rows": 1, "note": "jdoe logs in from 8.8.8.8 then 5.39.1.1 (US->RU) within 30m"},
+  "e7b4d2f9-1a83-4c67-b5e2-8d3f0a9c1b46": {"title": "Linux Reverse Shell", "expected_rows": 2, "note": "bash /dev/tcp and python socket fire; manage.py migrate does not"},
+  "f1e6b3d8-9c47-4a25-b6e1-2f8d0a4c7e59": {"title": "DNS Exfiltration", "expected_rows": 1, "note": "10.0.0.55 generates >100 long high-entropy subdomains (volume added by generator)"}
+}

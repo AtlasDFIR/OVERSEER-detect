@@ -1,0 +1,33 @@
+# Spins up a single-instance Splunk Enterprise (free trial license, dev use) with
+# HTTP Event Collector enabled so the integration runner can load sample events
+# and execute each detection's real SPL via the REST API.
+#
+# Usage:
+#   cd integration
+#   SPLUNK_PASSWORD=Changed123! docker compose up -d
+#   ./wait_for_splunk.sh
+#   python3 run_integration_tests.py
+#   docker compose down -v
+services:
+  splunk:
+    image: splunk/splunk:9.2
+    container_name: soc-splunk-test
+    hostname: splunk
+    environment:
+      SPLUNK_START_ARGS: "--accept-license"
+      SPLUNK_PASSWORD: "${SPLUNK_PASSWORD:-Changed123!}"
+      SPLUNK_HEC_TOKEN: "${SPLUNK_HEC_TOKEN:-00000000-0000-0000-0000-000000000000}"
+      # Pre-create the indexes our detections query, via a setup app baked at boot.
+      SPLUNK_APPS_URL: ""
+    ports:
+      - "8000:8000"   # web UI (optional, for debugging)
+      - "8088:8088"   # HEC
+      - "8089:8089"   # REST API / management
+    volumes:
+      - ./splunk_setup/indexes.conf:/opt/splunk/etc/system/local/indexes.conf:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsk", "https://localhost:8089/services/server/info", "-u", "admin:${SPLUNK_PASSWORD:-Changed123!}"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s

@@ -1,0 +1,5 @@
+{"_time": "2026-06-20T16:00:00", "index": "network", "sourcetype": "stream:dns", "src_ip": "10.0.0.55", "query": "a8f3kd92ljf83hd72bdk38fnskd92jfhsodm3.tunnel.evil-c2.com"}
+{"_time": "2026-06-20T16:00:01", "index": "network", "sourcetype": "stream:dns", "src_ip": "10.0.0.55", "query": "x9d8sk2jdh38fhskd83jfh38dks92jfhsod91.tunnel.evil-c2.com"}
+{"_time": "2026-06-20T16:00:02", "index": "network", "sourcetype": "stream:dns", "src_ip": "10.0.0.55", "query": "q7f8sk3jfh28dhskd93jfhs82dks83jfhso72.tunnel.evil-c2.com"}
+{"_time": "2026-06-20T16:00:03", "index": "network", "sourcetype": "stream:dns", "src_ip": "10.0.0.60", "query": "www.google.com"}
+{"_time": "2026-06-20T16:00:04", "index": "network", "sourcetype": "stream:dns", "src_ip": "10.0.0.60", "query": "api.github.com"}
