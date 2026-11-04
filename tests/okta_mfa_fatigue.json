@@ -1,0 +1,23 @@
+[
+  {
+    "name": "push_bomb_then_success_fires",
+    "events": [
+      {"push_count": 9, "mfa_success": 1}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "push_bomb_only_fires",
+    "events": [
+      {"push_count": 7, "mfa_success": 0}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "single_retry_does_not_fire",
+    "events": [
+      {"push_count": 2, "mfa_success": 1}
+    ],
+    "expected_alerts": 0
+  }
+]

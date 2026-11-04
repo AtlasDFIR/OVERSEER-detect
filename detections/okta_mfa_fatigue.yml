@@ -1,0 +1,47 @@
+id: a9c4e1f7-3d85-4b62-9e07-6b2f8a1d4c30
+title: Okta MFA Fatigue / Push Bombing
+status: production
+description: >
+  Detects an attacker spamming Okta Verify push notifications to wear a user down
+  into approving one (MFA fatigue). Pattern is many push challenges in a short
+  window with repeated rejects, ideally followed by a single accept.
+author: Atlas
+created: 2026-06-20
+modified: 2026-06-20
+severity: high
+mitre:
+  - T1621        # Multi-Factor Authentication Request Generation
+  - T1078.004    # Valid Accounts: Cloud Accounts
+data_sources:
+  - sourcetype: OktaIM2:log
+spl: |
+  index=cloud sourcetype="OktaIM2:log"
+  eventType="system.push.send_factor_verify_push"
+  | bin _time span=5m
+  | stats count as push_count
+      values(outcome.result) as outcomes
+      dc(client.ipAddress) as src_ips by _time, actor.alternateId
+  | where push_count >= 5
+  | appendcols [
+      search index=cloud sourcetype="OktaIM2:log"
+        eventType="user.authentication.auth_via_mfa" outcome.result="SUCCESS"
+      | bin _time span=5m
+      | stats count as mfa_success by _time, actor.alternateId
+    ]
+  | eval risk=if(mfa_success>0,"PUSH_BOMB_THEN_SUCCESS","PUSH_BOMB_ONLY")
+  | sort -push_count
+schedule:
+  cron: "*/5 * * * *"
+  earliest: -10m
+  latest: now
+throttle:
+  window: 1h
+  fields:
+    - actor.alternateId
+false_positives:
+  - A user genuinely retrying on a flaky network or with a dead phone.
+  - Shared accounts triggering multiple legitimate prompts.
+response: runbooks/okta_mfa_fatigue.md
+references:
+  - https://attack.mitre.org/techniques/T1621/
+tests: tests/okta_mfa_fatigue.json
