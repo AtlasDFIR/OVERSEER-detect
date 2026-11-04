@@ -1,0 +1,16 @@
+[
+  {
+    "name": "many_distinct_spns_fires",
+    "events": [
+      {"distinct_spns": 14, "rc4": true}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "few_spns_does_not_fire",
+    "events": [
+      {"distinct_spns": 3, "rc4": true}
+    ],
+    "expected_alerts": 0
+  }
+]

@@ -1,0 +1,41 @@
+id: b8f3a91c-2e74-4d56-9a1f-7c4e0b2d6f83
+title: Potential Kerberoasting - Anomalous TGS Requests
+status: production
+description: >
+  Detects a single account requesting an unusually high number of Kerberos
+  service tickets (TGS, Event 4769) using RC4 encryption. Kerberoasting harvests
+  service-account ticket hashes for offline cracking; the burst of RC4 TGS
+  requests across many SPNs is the tell.
+author: Atlas
+created: 2026-06-20
+modified: 2026-06-20
+severity: high
+mitre:
+  - T1558.003   # Steal or Forge Kerberos Tickets: Kerberoasting
+  - T1078        # Valid Accounts
+data_sources:
+  - sourcetype: WinEventLog:Security   # EventCode 4769
+spl: |
+  index=auth sourcetype="WinEventLog:Security" EventCode=4769
+  Ticket_Encryption_Type=0x17
+  Service_Name!="krbtgt" Service_Name!="*$"
+  | bin _time span=1h
+  | stats dc(Service_Name) as distinct_spns values(Service_Name) as spns
+      count as tgs_requests by _time, Account_Name, Client_Address
+  | where distinct_spns >= 10
+  | sort -distinct_spns
+schedule:
+  cron: "*/30 * * * *"
+  earliest: -1h
+  latest: now
+throttle:
+  window: 4h
+  fields:
+    - Account_Name
+false_positives:
+  - Vulnerability scanners and some service-discovery tools enumerate SPNs.
+  - Legitimate apps that legitimately authenticate to many services at startup.
+response: runbooks/kerberoasting.md
+references:
+  - https://attack.mitre.org/techniques/T1558/003/
+tests: tests/win_kerberoasting.json
