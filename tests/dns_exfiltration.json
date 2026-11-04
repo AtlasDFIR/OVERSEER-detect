@@ -1,0 +1,16 @@
+[
+  {
+    "name": "long_highvolume_subdomains_fires",
+    "events": [
+      {"query_count": 240, "unique_subs": 180, "avg_sub_len": 48, "tunnel": true}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "normal_dns_does_not_fire",
+    "events": [
+      {"query_count": 12, "unique_subs": 4, "avg_sub_len": 8, "tunnel": false}
+    ],
+    "expected_alerts": 0
+  }
+]

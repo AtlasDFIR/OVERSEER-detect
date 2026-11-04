@@ -1,0 +1,48 @@
+id: f1e6b3d8-9c47-4a25-b6e1-2f8d0a4c7e59
+title: Potential DNS Tunneling / Exfiltration
+status: test
+description: >
+  Detects hosts generating a high volume of DNS queries to a single parent domain
+  with long, high-entropy subdomains - the signature of DNS tunneling tools
+  (iodine, dnscat2) used for C2 or low-and-slow data exfiltration over a protocol
+  that egress filtering often ignores.
+author: Atlas
+created: 2026-06-20
+modified: 2026-06-20
+severity: high
+mitre:
+  - T1048.003   # Exfiltration Over Alternative Protocol: Unencrypted Non-C2
+  - T1071.004   # Application Layer Protocol: DNS
+data_sources:
+  - sourcetype: stream:dns
+  - sourcetype: WinEventLog:Microsoft-Windows-Sysmon/Operational   # EventCode 22
+spl: |
+  index=network (sourcetype="stream:dns" OR sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=22)
+  | eval q=lower(coalesce(query, QueryName))
+  | eval parent_domain=replace(q, "^.*?\.([^.]+\.[^.]+)$", "\1")
+  | eval subdomain=replace(q, "\.[^.]+\.[^.]+$", "")
+  | eval sub_len=len(subdomain)
+  | eval uniq_chars=mvcount(split(subdomain,""))
+  | eval entropy_proxy=uniq_chars/(sub_len+1)
+  | where sub_len > 30
+  | bin _time span=10m
+  | stats count as query_count dc(subdomain) as unique_subs
+      avg(sub_len) as avg_sub_len by _time, src_ip, parent_domain
+  | where query_count > 100 AND unique_subs > 50 AND avg_sub_len > 30
+  | sort -query_count
+schedule:
+  cron: "*/10 * * * *"
+  earliest: -15m
+  latest: now
+throttle:
+  window: 2h
+  fields:
+    - src_ip
+    - parent_domain
+false_positives:
+  - CDN, antivirus, and telemetry services use long algorithmic subdomains.
+  - Some cloud services (e.g. certain AWS/Azure endpoints) generate high DNS volume.
+response: runbooks/dns_exfiltration.md
+references:
+  - https://attack.mitre.org/techniques/T1048/003/
+tests: tests/dns_exfiltration.json
