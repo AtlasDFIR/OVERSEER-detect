@@ -1,0 +1,16 @@
+[
+  {
+    "name": "distant_geos_short_window_fires",
+    "events": [
+      {"Account_Name": "jdoe", "impossible_travel": true}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "same_region_does_not_fire",
+    "events": [
+      {"Account_Name": "jdoe", "impossible_travel": false}
+    ],
+    "expected_alerts": 0
+  }
+]

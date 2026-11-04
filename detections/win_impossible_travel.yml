@@ -1,0 +1,44 @@
+id: c3e8f1a6-7d22-4b59-8a14-9f0b2e6c5d31
+title: Impossible Travel - Successful Auth From Distant Geos
+status: test
+description: >
+  Detects the same account authenticating successfully from two locations whose
+  geographic separation could not be covered in the elapsed time between logins.
+  A strong indicator of credential compromise or session/token theft.
+author: Atlas
+created: 2026-06-20
+modified: 2026-06-20
+severity: high
+mitre:
+  - T1078        # Valid Accounts
+data_sources:
+  - sourcetype: WinEventLog:Security   # EventCode 4624 type 3/10
+spl: |
+  index=auth sourcetype="WinEventLog:Security" EventCode=4624 Logon_Type IN (3,10)
+  | iplocation Source_Network_Address
+  | where isnotnull(lat) AND isnotnull(lon)
+  | sort 0 Account_Name _time
+  | streamstats current=f last(lat) as plat last(lon) as plon last(_time) as ptime by Account_Name
+  | where isnotnull(plat)
+  | eval dist_km=round(6371*acos(min(1,
+        sin(lat*pi()/180)*sin(plat*pi()/180) +
+        cos(lat*pi()/180)*cos(plat*pi()/180)*cos((lon-plon)*pi()/180))),1)
+  | eval hours=(_time-ptime)/3600
+  | eval req_speed=round(dist_km/(hours+0.001),1)
+  | where dist_km>500 AND req_speed>900
+  | table _time Account_Name Source_Network_Address Country dist_km hours req_speed
+schedule:
+  cron: "*/20 * * * *"
+  earliest: -24h
+  latest: now
+throttle:
+  window: 12h
+  fields:
+    - Account_Name
+false_positives:
+  - VPN / corporate proxy egress in a different region than the user.
+  - Cloud-hosted RDP jump boxes.
+response: runbooks/impossible_travel.md
+references:
+  - https://attack.mitre.org/techniques/T1078/
+tests: tests/win_impossible_travel.json
