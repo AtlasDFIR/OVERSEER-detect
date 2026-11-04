@@ -1,0 +1,43 @@
+id: d4a7c2e9-6b18-4f53-8c92-1a3e7d5b0f64
+title: Suspicious Scheduled Task Creation
+status: production
+description: >
+  Detects scheduled task creation (Event 4698 or schtasks.exe / Register-ScheduledTask)
+  where the action runs a script interpreter, LOLBin, or a binary from a user-writable
+  path. Scheduled tasks are a durable persistence mechanism favored by commodity and
+  hands-on-keyboard actors alike.
+author: Atlas
+created: 2026-06-20
+modified: 2026-06-20
+severity: medium
+mitre:
+  - T1053.005   # Scheduled Task/Job: Scheduled Task
+data_sources:
+  - sourcetype: WinEventLog:Security                                # EventCode 4698
+  - sourcetype: WinEventLog:Microsoft-Windows-Sysmon/Operational    # EventCode 1
+spl: |
+  index=endpoint (sourcetype="WinEventLog:Security" EventCode=4698)
+  OR (sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1
+      (Image="*\\schtasks.exe" OR CommandLine="*Register-ScheduledTask*"))
+  | eval task_cmd=coalesce(Task_Content, CommandLine)
+  | where match(task_cmd, "(?i)(powershell|pwsh|cmd\.exe|wscript|cscript|mshta|regsvr32|rundll32)")
+      OR match(task_cmd, "(?i)(\\\\users\\\\public\\\\|\\\\appdata\\\\|\\\\temp\\\\|\\\\programdata\\\\)")
+  | stats count min(_time) as first_seen values(task_cmd) as task_definitions
+      by host, User
+  | convert ctime(first_seen)
+schedule:
+  cron: "*/15 * * * *"
+  earliest: -20m
+  latest: now
+throttle:
+  window: 2h
+  fields:
+    - host
+    - User
+false_positives:
+  - Software installers and updaters register tasks under AppData/ProgramData.
+  - Legitimate admin/IT automation deployed via GPO or RMM tooling.
+response: runbooks/scheduled_task_persistence.md
+references:
+  - https://attack.mitre.org/techniques/T1053/005/
+tests: tests/win_scheduled_task_persistence.json

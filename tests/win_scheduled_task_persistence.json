@@ -1,0 +1,23 @@
+[
+  {
+    "name": "task_runs_powershell_fires",
+    "events": [
+      {"CommandLine": "schtasks /create /tn Updater /tr \"powershell -nop -w hidden -c iex(...)\" /sc minute"}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "task_from_appdata_fires",
+    "events": [
+      {"CommandLine": "schtasks /create /tn Run /tr C:\\Users\\bob\\AppData\\Local\\Temp\\a.exe /sc onlogon"}
+    ],
+    "expected_alerts": 1
+  },
+  {
+    "name": "benign_task_does_not_fire",
+    "events": [
+      {"CommandLine": "schtasks /create /tn Backup /tr \"C:\\Program Files\\Veeam\\backup.exe\" /sc daily"}
+    ],
+    "expected_alerts": 0
+  }
+]
